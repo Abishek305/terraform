@@ -1,14 +1,24 @@
 name: Terraform CI/CD Pipeline
 
 on:
-  push:
-    branches:
-      - main
-      - dev
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:  # ✅ Allows manual execution for terraform destroy
+  workflow_dispatch:  # ✅ Manual trigger with user inputs
+    inputs:
+      branch:
+        description: "Select the branch to run Terraform on"
+        required: true
+        default: "main"
+      action:
+        description: "Select action: apply or destroy"
+        required: true
+        default: "apply"
+        type: choice
+        options:
+          - apply
+          - destroy
+      confirm_destroy:
+        description: "Type 'yes' to confirm destroy (only required if action=destroy)"
+        required: false
+        default: ""
 
 jobs:
   terraform:
@@ -27,6 +37,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}  # ✅ Checkout selected branch
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -40,13 +52,19 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        if: github.event.inputs.destroy != 'true'  # ✅ Skip if destroy is requested
+        if: github.event.inputs.action == 'apply'
         run: terraform plan -var-file=dev.tfvars -out=tfplan
 
-      - name: Terraform Apply (Only on Main Branch)
-        if: github.ref == 'refs/heads/main' && github.event.inputs.destroy != 'true'
+      - name: Terraform Apply
+        if: github.event.inputs.action == 'apply'
         run: terraform apply -auto-approve tfplan
 
-      - name: Terraform Destroy (Manual Trigger)
-        if: github.event.inputs.destroy == 'true'
+      - name: Confirm Destroy
+        if: github.event.inputs.action == 'destroy' && github.event.inputs.confirm_destroy != 'yes'
+        run: |
+          echo "❌ Destroy operation was not confirmed. Exiting..."
+          exit 1
+
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy' && github.event.inputs.confirm_destroy == 'yes'
         run: terraform destroy -auto-approve -var-file=dev.tfvars
