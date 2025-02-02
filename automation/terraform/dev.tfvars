@@ -24,8 +24,8 @@ iam_access_entries = [
     policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
     principal_arn = "arn:aws:iam::841162696396:user/terraform"
   },
-  # {
-  #   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-  #   principal_arn = "arn:aws:iam::498173904455:role/devops-team-role"
-  # }
+   {
+     policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+     principal_arn = "arn:aws:iam::841162696396:user/terraform_test_1"
+   }
 ]
