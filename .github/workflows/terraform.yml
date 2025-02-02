@@ -4,14 +4,15 @@ on:
   push:
     branches:
       - main
-      # - dev
-  # pull_request:
-  #   branches:
-  #     - main
+      - dev
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:  # ✅ Allows manual execution for terraform destroy
 
 jobs:
   terraform:
-    name: "Terraform Init, Plan & Apply"
+    name: "Terraform Init, Plan & Apply/Destroy"
     runs-on: ubuntu-latest
 
     env:
@@ -21,7 +22,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: automation/terraform
+        working-directory: automation/terraform  # ✅ Set working directory
 
     steps:
       - name: Checkout Repository
@@ -39,8 +40,13 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
+        if: github.event.inputs.destroy != 'true'  # ✅ Skip if destroy is requested
         run: terraform plan -var-file=dev.tfvars -out=tfplan
 
       - name: Terraform Apply (Only on Main Branch)
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && github.event.inputs.destroy != 'true'
         run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Destroy (Manual Trigger)
+        if: github.event.inputs.destroy == 'true'
+        run: terraform destroy -auto-approve -var-file=dev.tfvars
