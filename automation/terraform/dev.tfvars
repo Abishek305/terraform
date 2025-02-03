@@ -1,10 +1,10 @@
 # dev values
-aws_region         = "us-east-2"
+aws_region         = "us-east-1"
 vpc_cidr_block     = "192.168.0.0/16"
 public_subnet_1_cidr = "192.168.10.0/24"
 public_subnet_2_cidr = "192.168.20.0/24"
-availability_zone_1  = "us-east-2a"
-availability_zone_2  = "us-east-2b"
+availability_zone_1  = "us-east-1a"
+availability_zone_2  = "us-east-1b"
 environment          = "dev"
 cluster_name         = "dev-cluster"
 cluster_version      = "1.30"
