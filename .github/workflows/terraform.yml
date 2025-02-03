@@ -46,29 +46,34 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      - name: Set Terraform Action
+        id: set_action
+        run: |
+          echo "ACTION=${{ github.event.inputs.action }}" >> $GITHUB_ENV
+
       - name: Terraform Validate
         run: terraform validate
 
       - name: Terraform Plan
-        if: github.event.inputs.action == 'apply'
+        if: env.ACTION == 'apply'
         run: terraform plan -var-file=dev.tfvars -out=tfplan
 
       - name: Confirm Apply
-        if: github.event.inputs.action == 'apply' && github.event.inputs.confirm_apply != 'yes'
+        if: env.ACTION == 'apply' && github.event.inputs.confirm_apply != 'yes'
         run: |
           echo "Apply operation was not confirmed. Exiting..."
           exit 1
 
       - name: Terraform Apply
-        if: github.event.inputs.action == 'apply' && github.event.inputs.confirm_apply == 'yes'
+        if: env.ACTION == 'apply' && github.event.inputs.confirm_apply == 'yes'
         run: terraform apply -auto-approve tfplan
 
       - name: Confirm Destroy
-        if: github.event.inputs.action == 'destroy' && github.event.inputs.confirm_destroy != 'yes'
+        if: env.ACTION == 'destroy' && github.event.inputs.confirm_destroy != 'yes'
         run: |
           echo "Destroy operation was not confirmed. Exiting..."
           exit 1
 
       - name: Terraform Destroy
-        if: github.event.inputs.action == 'destroy' && github.event.inputs.confirm_destroy == 'yes'
+        if: env.ACTION == 'destroy' && github.event.inputs.confirm_destroy == 'yes'
         run: terraform destroy -auto-approve -var-file=dev.tfvars
