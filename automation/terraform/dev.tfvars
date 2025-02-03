@@ -20,10 +20,10 @@ image_tag_mutability = "MUTABLE"
 scan_on_push         = "true"
 
 iam_access_entries = [
-  {
-    policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-    principal_arn = "arn:aws:iam::841162696396:user/terraform"
-  },
+#  {
+#    policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+#    principal_arn = "arn:aws:iam::841162696396:user/terraform"
+#  },
    {
      policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
      principal_arn = "arn:aws:iam::841162696396:user/terraform_test_1"
