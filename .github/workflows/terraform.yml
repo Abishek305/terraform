@@ -1,10 +1,6 @@
 name: Terraform CI/CD Pipeline
 
 on:
-  push:
-    branches:
-      - main
-      - dev
   workflow_dispatch:
     inputs:
       action:
@@ -53,36 +49,26 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      - name: Determine Action (Auto vs. Manual)
-        id: determine_action
-        run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            echo "action=apply" >> $GITHUB_ENV
-          else
-            echo "action=${{ github.event.inputs.action }}" >> $GITHUB_ENV
-          fi
-
       - name: Terraform Plan
-        if: env.action == 'apply'
+        if: github.event.inputs.action == 'apply'
         run: terraform plan -var-file=dev.tfvars -out=tfplan
 
       - name: Confirm Apply
-        if: env.action == 'apply' && github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_apply != 'yes'
+        if: github.event.inputs.action == 'apply' && github.event.inputs.confirm_apply != 'yes'
         run: |
           echo "Apply operation was not confirmed. Exiting..."
           exit 1
 
       - name: Terraform Apply
-        if: env.action == 'apply' && (github.event_name == 'push' || github.event.inputs.confirm_apply == 'yes')
+        if: github.event.inputs.action == 'apply' && github.event.inputs.confirm_apply == 'yes'
         run: terraform apply -auto-approve tfplan
 
       - name: Confirm Destroy
-        if: env.action == 'destroy' && github.event.inputs.confirm_destroy != 'yes'
+        if: github.event.inputs.action == 'destroy' && github.event.inputs.confirm_destroy != 'yes'
         run: |
           echo "Destroy operation was not confirmed. Exiting..."
           exit 1
 
       - name: Terraform Destroy
-        if: env.action == 'destroy' && github.event.inputs.confirm_destroy == 'yes'
+        if: github.event.inputs.action == 'destroy' && github.event.inputs.confirm_destroy == 'yes'
         run: terraform destroy -auto-approve -var-file=dev.tfvars
-
