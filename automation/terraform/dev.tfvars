@@ -36,4 +36,4 @@ scan_on_push         = "true"
   #   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
   #   principal_arn = "arn:aws:iam::498173904455:role/devops-team-role"
   # }
-]
+#]
