@@ -9,14 +9,28 @@ variable "vpc_cidr_block" {
 variable "public_subnet_1_cidr" {
   description = "CIDR block for public subnet 1"
   type        = string
-  default     = "192.168.15.0/24"
+  default     = "192.168.1.0/24"
 }
 
 # Public Subnet 2 CIDR block
 variable "public_subnet_2_cidr" {
   description = "CIDR block for public subnet 2"
   type        = string
-  default     = "192.168.21.0/24"
+  default     = "192.168.2.0/24"
+}
+
+# Private Subnet 1 CIDR block
+variable "private_subnet_1_cidr" {
+  description = "CIDR block for public subnet 1"
+  type        = string
+  default     = "192.168.3.0/24"
+}
+
+# Private Subnet 2 CIDR block
+variable "private_subnet_2_cidr" {
+  description = "CIDR block for public subnet 2"
+  type        = string
+  default     = "192.168.4.0/24"
 }
 
 # Availability Zones
