@@ -18,6 +18,16 @@ variable "public_subnet_2_cidr" {
   type        = string
 }
 
+variable "private_subnet_1_cidr" {
+  description = "CIDR block for public subnet 2"
+  type        = string
+}
+
+variable "private_subnet_2_cidr" {
+  description = "CIDR block for public subnet 2"
+  type        = string
+}
+
 variable "availability_zone_1" {
   description = "First availability zone"
   type        = string
@@ -100,4 +110,14 @@ variable "iam_access_entries" {
     policy_arn    = string
     principal_arn = string
   }))
+}
+
+variable "ami_type" {
+  description = "AMI type for EKS managed node group"
+  type = string
+}
+
+variable "capacity_type" {
+  description = "Node group capacity"
+  type = string
 }
