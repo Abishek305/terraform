@@ -3,16 +3,16 @@ terraform {
 
   backend "s3" {
     encrypt = true
-    bucket = "test-state-terra-projs"
-    region = "us-east-1"
+    bucket = "test-state-terra-proj"
+    region = "us-east-2"
     key = "terraform/state/terraform.tfstate"
     # profile = "test-dev"
   }
 
-  #required_providers {
-  #  aws = {
-  #    source  = "hashicorp/aws"
-  #    version = "~> 5.0"
-  #  }
-  #}
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
 }
