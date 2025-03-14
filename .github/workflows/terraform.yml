@@ -40,7 +40,7 @@ jobs:
 
       - name: Download Terraform Variables from S3
         run: |
-          aws s3 cp s3://test-state-terrass-projs/dev.tfvars dev.tfvars --region ${{ env.AWS_REGION }}
+          aws s3 cp s3://test-state-terrass-projs/dev.tfvars dev.tfvars --region us-east-2
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
