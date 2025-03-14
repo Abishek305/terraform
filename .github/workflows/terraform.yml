@@ -38,6 +38,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Download Terraform Variables from S3
+        run: |
+          aws s3 cp s3://test-state-terrass-projs/dev.tfvars dev.tfvars
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
