@@ -171,12 +171,17 @@ jobs:
 
       - name: Terraform Apply (Manual Approval Required)
         if: github.event.inputs.action == 'apply'
-        run: terraform apply plan.tfout  
+        run: terraform apply plan.tfout 
+        
   manual-approval-destroy:
     name: Manual Approval for Destroy
     runs-on: ubuntu-latest
     needs: Terraform-Plan
     if: github.event.inputs.action == 'destroy'
+
+    permissions:
+      issues: write  # ✅ Grants permission to create issues
+      contents: read
 
     steps:
       - name: Pause for Manual Approval
