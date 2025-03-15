@@ -11,6 +11,15 @@ on:
         options:
           - apply
           - destroy
+      environment:
+        description: "Select environment"
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - secrets
+          - prod 
       confirm_apply:
         description: "Type 'yes' to confirm apply (only required if action=apply)"
         required: false
@@ -39,9 +48,27 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set Selected Environment
+        run: echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+        
+
       - name: Download Terraform Variables from S3
         run: |
-          aws s3 cp s3://{{ env.S3_BUCKET}}/dev.tfvars dev.tfvars --region {{ env.AWS_REGION }}
+          aws s3 cp s3://${{ env.S3_BUCKET }}/$ENVIRONMENT.tfvars $ENVIRONMENT.tfvars --region ${{ env.AWS_REGION }}
+
+      - name: Verify terraform Variables
+        run: | 
+          if [ ! -f $ENVIRONMENT.tfvars ]: then
+            echo "Error: Terraform variable file not found"
+            exit 1
+          fi 
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -60,7 +87,7 @@ jobs:
 
       - name: Terraform Plan
         if: env.ACTION == 'apply'
-        run: terraform plan -var-file=dev.tfvars -out=tfplan
+        run: terraform plan -var-file=$ENVIRONMENT.tfvars -out=tfplan
 
       - name: Confirm Apply
         if: env.ACTION == 'apply'
@@ -84,4 +111,4 @@ jobs:
 
       - name: Terraform Destroy
         if: env.ACTION == 'destroy'
-        run: terraform destroy -auto-approve -var-file=dev.tfvars
+        run: terraform destroy -auto-approve -var-file=$ENVIRONMENT.tfvars
