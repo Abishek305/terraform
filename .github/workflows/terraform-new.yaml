@@ -183,6 +183,7 @@ jobs:
       contents: read
     env:
       AWS_REGION: "us-east-2"
+      S3_BUCKET: "test-state-terrass-projs"
 
     defaults:
       run:
