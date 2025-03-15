@@ -181,6 +181,8 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    env:
+      AWS_REGION: "us-east-2"
 
     defaults:
       run:
