@@ -65,7 +65,7 @@ jobs:
 
       - name: Verify terraform Variables
         run: | 
-          if [ ! -f $ENVIRONMENT.tfvars ]: then
+          if [ ! -f $ENVIRONMENT.tfvars ]; then
             echo "Error: Terraform variable file not found"
             exit 1
           fi 
