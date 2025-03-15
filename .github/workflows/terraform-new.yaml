@@ -251,4 +251,4 @@ jobs:
           fi
 
       - name: Terraform Destroy (Manual Confirmation Required)
-        run: terraform destroy -var-file=${ENVIRONMENT}.tfvars
+        run: terraform destroy -auto-approve -var-file=${ENVIRONMENT}.tfvars
