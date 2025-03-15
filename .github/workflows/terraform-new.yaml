@@ -1,0 +1,227 @@
+name: Terraform CI/CD Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Select action: apply or destroy"
+        required: true
+        default: "apply"
+        type: choice
+        options:
+          - apply
+          - destroy
+      environment:
+        description: "Select environment"
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod 
+      confirm_apply:
+        description: "Type 'yes' to confirm apply (only required if action=apply)"
+        required: false
+        default: ""
+      confirm_destroy:
+        description: "Type 'yes' to confirm destroy (only required if action=destroy)"
+        required: false
+        default: ""
+
+jobs:
+  Terraform-Plan:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    env:
+      AWS_REGION: "us-east-2"
+      S3_BUCKET: "test-state-terrass-projs"
+
+    defaults:
+      run:
+        working-directory: automation/terraform  
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set Selected Environment
+        run: echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_ENV  
+
+      - name: Download Terraform Variables from S3
+        run: aws s3 cp s3://${{ env.S3_BUCKET }}/${ENVIRONMENT}.tfvars ${ENVIRONMENT}.tfvars --region ${{ env.AWS_REGION }}
+
+      - name: Verify Terraform Variables
+        run: |
+          if [ ! -f "${ENVIRONMENT}.tfvars" ]; then
+            echo "Error: Terraform variable file not found!"
+            exit 1
+          fi
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        if: github.event.inputs.action == 'apply'
+        run: terraform plan -var-file=${ENVIRONMENT}.tfvars -out=plan.tfout
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-plan
+          path: automation/terraform/plan.tfout
+
+      - name: Upload .terraform.lock.hcl
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-workspace
+          path: automation/terraform/.terraform.lock.hcl
+          include-hidden-files: true
+
+  manual-approval:
+    name: Manual Approval
+    runs-on: ubuntu-latest
+    needs: Terraform-Plan
+    if: github.event.inputs.action == 'apply'
+
+    permissions:
+      issues: write
+      contents: read
+
+    steps: 
+      - name: Await Manual Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: Abishek305  # GitHub username for manual approval
+          minimum-approvals: 1
+          issue-title: "Manual Approval Required for Terraform Apply"
+          issue-body: "Please approve or deny the deployment."
+          exclude-workflow-initiator-as-approver: false
+     
+  terraform-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    needs: manual-approval
+
+    permissions:
+      id-token: write
+      contents: read
+
+    defaults:
+      run:
+        working-directory: automation/terraform
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with: 
+          terraform_version: latest
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-plan
+          path: automation/terraform
+
+      - name: Checkout Terraform Workspace
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-workspace
+          path: automation/terraform
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Confirm Apply
+        if: github.event.inputs.action == 'apply'
+        run: |
+          if [[ "${{ github.event.inputs.confirm_apply }}" != "yes" ]]; then
+            echo "Terraform Apply was not confirmed. Exiting..."
+            exit 1
+          fi
+
+      - name: Terraform Apply (Manual Approval Required)
+        if: github.event.inputs.action == 'apply'
+        run: terraform apply plan.tfout  
+
+  terraform-destroy:
+    name: Terraform Destroy
+    runs-on: ubuntu-latest
+    if: github.event.inputs.action == 'destroy'
+
+    permissions:
+      id-token: write
+      contents: read
+
+    defaults:
+      run:
+        working-directory: automation/terraform
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set Selected Environment
+        run: echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_ENV  
+
+      - name: Download Terraform Variables from S3
+        run: aws s3 cp s3://${{ env.S3_BUCKET }}/${ENVIRONMENT}.tfvars ${ENVIRONMENT}.tfvars --region ${{ env.AWS_REGION }}
+
+      - name: Verify Terraform Variables
+        run: |
+          if [ ! -f "${ENVIRONMENT}.tfvars" ]; then
+            echo "Error: Terraform variable file not found!"
+            exit 1
+          fi
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Confirm Destroy
+        run: |
+          if [[ "${{ github.event.inputs.confirm_destroy }}" != "yes" ]]; then
+            echo "Terraform Destroy was not confirmed. Exiting..."
+            exit 1
+          fi
+
+      - name: Terraform Destroy (Manual Confirmation Required)
+        run: terraform destroy -var-file=${ENVIRONMENT}.tfvars
