@@ -18,7 +18,7 @@ on:
         type: choice
         options:
           - dev
-          - secrets
+          - stage
           - prod 
       confirm_apply:
         description: "Type 'yes' to confirm apply (only required if action=apply)"
